@@ -2,6 +2,7 @@
     "name": "mamitech/laravel-sqs-subscriber",
     "description": "Mamikos internal package to utilize laravel queue:work command to listen to Amazon SQS message.",
     "keyword": ["mamikos", "sqs"],
+    "license": "MIT",
     "authors": [{
         "name": "Arifin",
         "email": "arifin@mamiteam.com"
