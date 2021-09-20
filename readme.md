@@ -32,7 +32,11 @@ then it would be an array, otherwise it would be string.
 ## Add a new connector using `sqs-distributed` driver into your config/queue.php
 
 Now you will need a new queue connection using the new driver called `sqs-distributed` that is provided by
-this library. See example on the following section.
+this library. Please note that we are using `sqs-distributed` terms for the new driver here to get a sense
+that the message is published and consumed by different services instead of how laravel' original queue
+works - laravel original queue can only works if the publisher and subscriber comes from the same service.
+
+See example on the following section.
 
 # Example
 
