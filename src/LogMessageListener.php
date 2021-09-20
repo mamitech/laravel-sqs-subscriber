@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Log;
  */
 class LogMessageListener
 {
-    protected $message;
-
     public function handle(string $message)
     {
         Log::info($message);
