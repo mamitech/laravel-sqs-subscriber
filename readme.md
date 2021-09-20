@@ -29,7 +29,12 @@ Your class should have a `handle` receiving one `message` parameter. `message` w
 or array depending on how the string inside the queue being encoded. If it's a proper json encoded string
 then it would be an array, otherwise it would be string.
 
-## For example
+## Add a new connector using `sqs-distributed` driver into your config/queue.php
+
+Now you will need a new queue connection using the new driver called `sqs-distributed` that is provided by
+this library. See example on the following section.
+
+# Example
 
 Suppose that you have a queue in Amazon SQS named `user-registration`. An example of the message inside the queue
 looks like this:
@@ -45,7 +50,39 @@ looks like this:
 }
 ```
 
-in your config.php:
+Here's what you need to do.
+
+## Add new connection in your `config/queue.php`
+
+Add the new connection inside your queue config using `sqs-distributed` as driver value:
+
+```
+<?php
+# config/queue.php
+
+return [
+    'default' => env('QUEUE_CONNECTION', 'sync'),
+
+    'connections' => [
+        .. other connections ..
+
+        'sqs-distributed' => [
+            'driver' => 'sqs-distributed', # NOTE THIS PART
+            'key' => env('AWS_ACCESS_KEY_ID', 'your-public-key'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY', 'your-secret-key'),
+            'prefix' => env('AWS_SQS_PREFIX', 'https://sqs.us-east-1.amazonaws.com/your-account-id'),
+            'queue' => env('AWS_DISTRIBUTED_DEFAULT_QUEUE', 'user-registration'),
+            'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
+        ],
+
+        ...
+```
+
+note that in the new connection you will use `sqs-distributed` as driver value. you can also
+specify the default queue inside `queue` key that will be used when you don't specify particular
+queue to listen to.
+
+Then you should specify which class would handle each topic in your `config/sqs-topic-map.php`:
 
 ```
 return [
@@ -53,15 +90,15 @@ return [
 ];
 ```
 
-you should have a class inside `app\Worker\UserVerifiedListener.php`
+you must have the corresponding class inside `app\Worker\UserVerifiedListener.php`
 
 ```
 <?php
-namespace Mamitech\LaravelSqsSubscriber;
+namespace App\Worker;
 
 class UserVerifiedListener
 {
-    public function handle(string $message)
+    public function handle(string $message) # THIS METHOD MUST EXISTS
     {
         $user = $message['user'];
         $email = $user['email'];
@@ -70,8 +107,9 @@ class UserVerifiedListener
 }
 ```
 
-Everytime there is a new message in the queue with topic `user-registered`, laravel will spawn a new instance of
-`App\Worker\UserRegisteredListener` and call method `handle` of it by passing a `$message` parameter.
+Everytime there is a new message in the `user-registration` queue with topic of `user-verified`,
+laravel will spawn a new instance of `App\Worker\UserVerifiedListener` and call method `handle`
+of it by passing a `$message` parameter.
 
 As you can see, because `message` field inside the message also contains a valid json object, then you can
 directly access array data inside it using `$message['user']`. This is because when passing the parameter
