@@ -82,7 +82,8 @@ return [
         ...
 ```
 
-note that in the new connection you will use `sqs-distributed` as driver value. you can also
+note that in the new connection you will use `sqs-distributed` as driver value. To keep the consistency
+we also name the connection as `sqs-distributed` as the name of it's driver. You can also
 specify the default queue inside `queue` key that will be used when you don't specify particular
 queue to listen to.
 

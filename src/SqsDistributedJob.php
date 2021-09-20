@@ -1,5 +1,4 @@
 <?php
-
 namespace Mamitech\LaravelSqsSubscriber;
 
 use Illuminate\Queue\Jobs\SqsJob;

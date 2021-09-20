@@ -1,5 +1,5 @@
 <?php
-namespace Mamikos\LaravelSqsSubscriber;
+namespace Mamitech\LaravelSqsSubscriber;
 
 use Illuminate\Queue\SqsQueue;
 
