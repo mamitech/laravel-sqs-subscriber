@@ -9,7 +9,7 @@ class ServiceProvider extends IlluminateServiceProvider
     public function boot()
     {
         $this->publishes([
-            __DIR__.'../config/sqs-topic-map.php' => config_path('sqs-topic-map.php'),
+            __DIR__.'/../config/sqs-topic-map.php' => config_path('sqs-topic-map.php'),
         ]);
     }
     public function register()
