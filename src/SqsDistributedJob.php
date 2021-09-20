@@ -2,18 +2,14 @@
 namespace Mamitech\LaravelSqsSubscriber;
 
 use Illuminate\Queue\Jobs\SqsJob;
-use App\Jobs\DistributedSqsListener\LogMessageListener;
 
 class SqsDistributedJob extends SqsJob
 {
-    const TOPIC_LISTENER_MAP = [
-        'log-message' => LogMessageListener::class
-    ];
-
     public function payload()
     {
         $payload = parent::payload();
-        $payload['job'] = self::TOPIC_LISTENER_MAP[$payload['topic']];
+        $topic = $payload['topic'];
+        $payload['job'] = config("sqs-topic-map.$topic");
 
         return $payload;
     }
