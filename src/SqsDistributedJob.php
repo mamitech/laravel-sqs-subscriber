@@ -9,7 +9,8 @@ class SqsDistributedJob extends SqsJob
     {
         $payload = parent::payload();
         $topic = $payload['topic'];
-        $payload['job'] = config("sqs-topic-map.$topic");
+        $queue = str_replace('/', '', $this->queue);
+        $payload['job'] = config("sqs-topic-map.$queue.$topic");
 
         return $payload;
     }
