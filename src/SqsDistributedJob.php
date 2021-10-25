@@ -45,7 +45,8 @@ class SqsDistributedJob extends SqsJob
 
     protected function getListener(string $topic)
     {
-        $listenerClass = config("sqs-topic-map.$topic");
+        $queue = str_replace('/', '', $this->queue);
+        $listenerClass = config("sqs-topic-map.$queue.$topic");
         if (empty($listenerClass)) {
             throw new \Exception("Listener for topic $topic is not found");
         }
