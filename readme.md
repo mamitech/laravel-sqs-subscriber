@@ -113,7 +113,7 @@ namespace App\Worker;
 
 class UserVerifiedListener
 {
-    public function handle(string $message) # THIS METHOD MUST EXISTS
+    public function handle($message) # THIS METHOD MUST EXISTS
     {
         $user = $message['user'];
         $email = $user['email'];
@@ -124,9 +124,10 @@ class UserVerifiedListener
 
 Everytime there is a new message in the `user-registration` queue with topic of `user-verified`,
 laravel will spawn a new instance of `App\Worker\UserVerifiedListener` and call method `handle`
-of it by passing a `$message` parameter.
+of it by passing a `$message` parameter. This `$message` can be of any type from int, float, string
+or array. It depends on the value inside `message` key in your queue message.
 
-As you can see, because `message` field inside the message also contains a valid json object, then you can
+In the case of `$message` containing an array as in example above, then you can
 directly access array data inside it using `$message['user']`. This is because when passing the parameter
 to `handle`, the library will first decode the message using `json_decode`.
 
