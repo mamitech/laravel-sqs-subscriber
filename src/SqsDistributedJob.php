@@ -5,19 +5,39 @@ use Illuminate\Queue\Jobs\SqsJob;
 
 class SqsDistributedJob extends SqsJob
 {
+    public function fire()
+    {
+        $payload = $this->payload();
+        $listener = app()->make($payload['job']);
+        $listener->handle($this->isUseTopic() ? $payload['message'] : $payload);
+
+        if (! $this->isDeletedOrReleased()) {
+            $this->delete();
+        }
+    }
+
     public function payload()
     {
         $payload = parent::payload();
-        $topic = $payload['topic'];
-        $queue = str_replace('/', '', $this->queue);
-        $payload['job'] = config("sqs-topic-map.$queue.$topic");
+        if (! is_array($payload)) {
+            $payload = ['body' => $payload];
+        }
+        $payload['job'] = LogMessageListener::class;
+        if ($this->isUseTopic()) {
+            $topic = $this->getTopic($payload);
+            $payload['job'] = $this->getListener($topic);
+        }
 
         return $payload;
     }
 
-    public function getTopic()
+    protected function isUseTopic()
     {
-        $payload = $this->payload();
+        return config('queue.connections.sqs-distributed.use_topic', true);
+    }
+
+    protected function getTopic(array $payload)
+    {
         $topic = null;
 
         # TopicARM will be used when listening messages for messages from SNS
@@ -29,18 +49,8 @@ class SqsDistributedJob extends SqsJob
         if (isset($payload['topic'])) {
             $topic = $payload['topic'];
         }
+
         return $topic;
-    }
-
-    public function fire()
-    {
-        $payload = $this->payload();
-        $listener = $this->getListener($this->getTopic());
-        $listener->handle($payload['message']);
-
-        if (!$this->isDeletedOrReleased()) {
-            $this->delete();
-        }
     }
 
     protected function getListener(string $topic)
@@ -51,6 +61,6 @@ class SqsDistributedJob extends SqsJob
             throw new \Exception("Listener for topic $topic is not found");
         }
 
-        return app()->make($listenerClass);
+        return $listenerClass;
     }
 }
