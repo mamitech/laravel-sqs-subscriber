@@ -15,6 +15,8 @@ class SqsDistributedQueue extends SqsQueue
         $maxWaitTime = $this->getMaxWaitTime();
 
         if (empty($this->messageBuffer)) {
+            $this->deleteMessages($queue);
+
             $response = $this->sqs->receiveMessage([
                 'QueueUrl' => $queue = $this->getQueue($queue),
                 'AttributeNames' => ['ApproximateReceiveCount'],
@@ -57,7 +59,12 @@ class SqsDistributedQueue extends SqsQueue
         return config('queue.connections.sqs-distributed.use_topic', true);
     }
 
-    public function getMaxWaitTime()
+    public function pushMessageToBeDeleted($messageReceiptHandler)
+    {
+        $this->messagesToBeDeleted[] = $messageReceiptHandler;
+    }
+
+    private function getMaxWaitTime()
     {
         $maxWaitTime = 0;
         if ($this->getMaxReceiveMessage() > 1) {
@@ -66,12 +73,7 @@ class SqsDistributedQueue extends SqsQueue
         return $maxWaitTime;
     }
 
-    public function pushMessageToBeDeleted($messageReceiptHandler)
-    {
-        $this->messagesToBeDeleted[] = $messageReceiptHandler;
-    }
-
-    public function deleteMessages($queue = null)
+    private function deleteMessages($queue = null)
     {
         if (count($this->messagesToBeDeleted) > 0) {
             $this->sqs->deleteMessageBatch([
