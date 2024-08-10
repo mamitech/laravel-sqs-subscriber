@@ -12,7 +12,12 @@ class SqsDistributedJob extends SqsJob
         $listener->handle($this->isUseTopic() ? $payload['message'] : $payload);
 
         if (! $this->isDeletedOrReleased()) {
-            $this->delete();
+            if ($this->getMaxReceiveMessage() === 1) {
+                $this->delete();
+            } else {
+                $this->pushMessageToBeDeleted($this->job['ReceiptHandle']);
+                $this->deleted = true;
+            }
         }
     }
 
@@ -22,7 +27,7 @@ class SqsDistributedJob extends SqsJob
         if (! is_array($payload)) {
             $payload = ['body' => $payload];
         }
-        $payload['job'] = LogMessageListener::class;
+        $payload['job'] = config('sqs-topic-map.default', LogMessageListener::class);
         if ($this->isUseTopic()) {
             $topic = $this->getTopic($payload);
             $payload['job'] = $this->getListener($topic);
@@ -33,7 +38,8 @@ class SqsDistributedJob extends SqsJob
 
     protected function isUseTopic()
     {
-        return config('queue.connections.sqs-distributed.use_topic', true);
+        $queue = $this->container->make('queue')->connection($this->connectionName);
+        return $queue->isUseTopic();
     }
 
     protected function getTopic(array $payload)
@@ -62,5 +68,17 @@ class SqsDistributedJob extends SqsJob
         }
 
         return $listenerClass;
+    }
+
+    protected function getMaxReceiveMessage()
+    {
+        $queue = $this->container->make('queue')->connection($this->connectionName);
+        return $queue->getMaxReceiveMessage();
+    }
+
+    protected function pushMessageToBeDeleted($messageId)
+    {
+        $queue = $this->container->make('queue')->connection($this->connectionName);
+        $queue->pushMessageToBeDeleted($messageId);
     }
 }
