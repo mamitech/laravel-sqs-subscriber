@@ -80,7 +80,7 @@ class SqsDistributedQueue extends SqsQueue
                 'QueueUrl' => $this->getQueue($queue),
                 'Entries' => array_map(function ($key, $value) {
                     return [
-                        'Id' => $key,
+                        'Id' => (string) $key,
                         'ReceiptHandle' => $value,
                     ];
                 }, array_keys($this->messagesToBeDeleted), array_values($this->messagesToBeDeleted)),
