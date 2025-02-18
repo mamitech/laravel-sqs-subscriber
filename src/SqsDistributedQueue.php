@@ -50,7 +50,7 @@ class SqsDistributedQueue extends SqsQueue
                     $this->messageBuffer = $response['Messages'];
                 }
             } else {
-                $this->sleep();
+                $this->shouldSleep = true;
             }
         }
 
