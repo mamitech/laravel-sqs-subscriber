@@ -9,6 +9,8 @@ class SqsDistributedQueue extends SqsQueue
 
     private $messagesToBeDeleted = [];
 
+    private $shouldSleep = false;
+
     public function pop($queue = null)
     {
         $maxReceiveMessage = $this->getMaxReceiveMessage();
@@ -17,29 +19,46 @@ class SqsDistributedQueue extends SqsQueue
         if (empty($this->messageBuffer)) {
             $this->deleteMessages($queue);
 
+            if ($this->shouldSleep) {
+                $this->sleep();
+                $this->shouldSleep = false;
+            }
+
             $response = $this->sqs->receiveMessage([
                 'QueueUrl' => $queue = $this->getQueue($queue),
                 'AttributeNames' => ['ApproximateReceiveCount'],
                 'MaxNumberOfMessages' => $maxReceiveMessage,
                 'WaitTimeSeconds' => $maxWaitTime,
             ]);
+
             $this->logSqsResponse($response);
 
             if (! is_null($response['Messages']) && count($response['Messages']) > 0) {
+                $this->shouldSleep = count($response['Messages']) < $maxReceiveMessage;
+
                 if (count($response['Messages']) === 1) {
                     return new SqsDistributedJob(
-                        $this->container, $this->sqs, $response['Messages'][0],
-                        $this->connectionName, $queue
+                        $this->container,
+                        $this->sqs,
+                        $response['Messages'][0],
+                        $this->connectionName,
+                        $queue
                     );
                 } else {
                     $this->messageBuffer = $response['Messages'];
                 }
+            } else {
+                $this->sleep();
             }
         }
+
         if (! empty($this->messageBuffer)) {
             return new SqsDistributedJob(
-                $this->container, $this->sqs, array_shift($this->messageBuffer),
-                $this->connectionName, $queue
+                $this->container,
+                $this->sqs,
+                array_shift($this->messageBuffer),
+                $this->connectionName,
+                $queue
             );
         }
     }
@@ -57,6 +76,11 @@ class SqsDistributedQueue extends SqsQueue
     public function isUseTopic()
     {
         return config('queue.connections.sqs-distributed.use_topic', true);
+    }
+
+    public function getSleepTime()
+    {
+        return config('queue.connections.sqs-distributed.sleep_time', 0);
     }
 
     public function pushMessageToBeDeleted($messageReceiptHandler)
@@ -98,6 +122,16 @@ class SqsDistributedQueue extends SqsQueue
             } else {
                 info('No messages in the queue.');
             }
+        }
+    }
+
+    private function sleep()
+    {
+        $sleepTime = $this->getSleepTime();
+
+        if ($sleepTime > 0) {
+            info(sprintf('Sleeping for %d seconds.', $sleepTime));
+            sleep($sleepTime);
         }
     }
 }
