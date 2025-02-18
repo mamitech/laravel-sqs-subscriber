@@ -34,9 +34,11 @@ class SqsDistributedQueue extends SqsQueue
             $this->logSqsResponse($response);
 
             if (! is_null($response['Messages']) && count($response['Messages']) > 0) {
-                $this->shouldSleep = count($response['Messages']) < $maxReceiveMessage;
+                $messagesCount = count($response['Messages']);
 
-                if (count($response['Messages']) === 1) {
+                $this->shouldSleep = $messagesCount < $maxReceiveMessage;
+
+                if ($messagesCount === 1) {
                     return new SqsDistributedJob(
                         $this->container,
                         $this->sqs,
@@ -128,8 +130,9 @@ class SqsDistributedQueue extends SqsQueue
     private function sleep()
     {
         $sleepTime = $this->getSleepTime();
+        $maxReceiveMessage = $this->getMaxReceiveMessage();
 
-        if ($sleepTime > 0) {
+        if ($sleepTime > 0 && $maxReceiveMessage > 1) {
             info(sprintf('Sleeping for %d seconds.', $sleepTime));
             sleep($sleepTime);
         }
