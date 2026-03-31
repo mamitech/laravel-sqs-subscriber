@@ -20,6 +20,8 @@ AWS_SQS_PREFIX=https://sqs.ap-southeast-1.amazonaws.com/your-account-id
 AWS_SQS_MAX_RECEIVE_MESSAGE=1
 AWS_SQS_DISTRIBUTED_DEFAULT_QUEUE=test-local
 AWS_SQS_DISTRIBUTED_USE_TOPIC=true
+AWS_SQS_DISTRIBUTED_TOPIC_NAME=topic
+AWS_SQS_DISTRIBUTED_BODY_NAME=message
 ```
 
 ## Troubleshoot
@@ -88,15 +90,18 @@ return [
             'secret' => env('AWS_SECRET_ACCESS_KEY', 'your-secret-key'),
             'prefix' => env('AWS_SQS_PREFIX', 'https://sqs.us-east-1.amazonaws.com/your-account-id'),
             'queue' => env('AWS_SQS_DISTRIBUTED_DEFAULT_QUEUE', 'user-registration'),
+            'topic_name' => env('AWS_SQS_DISTRIBUTED_TOPIC_NAME', 'topic'),
+            'body_name' => env('AWS_SQS_DISTRIBUTED_BODY_NAME', 'message'),
             'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
         ],
 
         ...
 ```
-note that in the new connection you will use `sqs-distributed` as driver value. To keep the consistency
+Note that in the new connection you will use `sqs-distributed` as driver value. To keep the consistency
 we also name the connection as `sqs-distributed` as the name of it's driver. You can also
 specify the default queue inside `queue` key that will be used when you don't specify particular
-queue to listen to.
+queue to listen to. And if your message usees different key names for topic and body, you can specify
+it using `topic_name` and `body_name` keys.
 
 ## Map Topic to Handler Class in `config/sqs-topic-map.php`
 

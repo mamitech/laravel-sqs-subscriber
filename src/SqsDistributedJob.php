@@ -7,9 +7,10 @@ class SqsDistributedJob extends SqsJob
 {
     public function fire()
     {
+        $bodyName = $this->getBodyName();
         $payload = $this->payload();
         $listener = app()->make($payload['job']);
-        $listener->handle($this->isUseTopic() ? $payload['message'] : $payload);
+        $listener->handle($this->isUseTopic() ? $payload[$bodyName] : $payload);
 
         if (! $this->isDeletedOrReleased()) {
             if ($this->getMaxReceiveMessage() === 1) {
@@ -52,19 +53,34 @@ class SqsDistributedJob extends SqsJob
         }
 
         # topic key have higher priority to be used
-        if (isset($payload['topic'])) {
-            $topic = $payload['topic'];
+        $topicName = $this->getTopicName();
+        if (isset($payload[$topicName])) {
+            $topic = $payload[$topicName];
         }
 
         return $topic;
     }
 
+    private function getTopicName()
+    {
+        return config(sprintf('queue.connections.%s.topic_name', $this->getConnectionName()));
+    }
+
+    private function getBodyName()
+    {
+        return config(sprintf('queue.connections.%s.body_name', $this->getConnectionName()));
+    }
+
+    private function getQueueName()
+    {
+        return str_replace('/', '', $this->queue);
+    }
+
     protected function getListener(string $topic)
     {
-        $queue = str_replace('/', '', $this->queue);
-        $listenerClass = config("sqs-topic-map.$queue.$topic");
+        $listenerClass = config(sprintf('sqs-topic-map.%s.%s', $this->getQueueName(), $topic));
         if (empty($listenerClass)) {
-            throw new \Exception("Listener for topic $topic is not found");
+            throw new \Exception(sprintf('Listener for topic %s is not found', $topic));
         }
 
         return $listenerClass;
