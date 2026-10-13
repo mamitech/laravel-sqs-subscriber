@@ -145,7 +145,7 @@ php artisan queue:work sqs-distributed
 
 The command above will run the worker to listen to sqs-distributed with default queue. If you
 want to specify specific queue or even multiple queue to listen to, you can add `--queue`
-parameter as described in [laravel documentation](https://laravel.com/docs/5.7/queues#running-the-queue-worker)
+parameter as described in [laravel documentation](https://laravel.com/docs/13.x/queues#running-the-queue-worker)
 
 That's it! now your worker will consume the message from Amazon SQS. Just make sure that your worker
 has a supervisor program such as systemd to run it so that when something unexpectedly happened and
